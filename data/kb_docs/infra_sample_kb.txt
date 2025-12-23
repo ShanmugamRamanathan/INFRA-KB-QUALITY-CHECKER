@@ -1,0 +1,69 @@
+[DOC1]
+Title: SCOM Heartbeat Failure
+If a SCOM agent stops sending heartbeat messages, first check if the server is online and reachable over the network.
+Verify that you can ping the server and that DNS name resolution works correctly.
+Then confirm that the Microsoft Monitoring Agent (Health Service) is running and restart it if required using services.msc or PowerShell.
+If the issue persists, check if the agent certificate or RunAs account has changed or expired.
+
+[DOC2]
+Title: SCOM Agent Greyed Out
+When an agent appears greyed out in the SCOM console, it usually indicates a communication problem.
+Check the OperationsManager event log on the agent for connectivity or authentication errors.
+Ensure that firewalls allow communication between the agent and the management server on the required ports (TCP 5723 by default).
+If needed, run the SCOM Agent Repair from the console or reinstall the agent.
+
+[DOC3]
+Title: SCCM Client Not Reporting
+If an SCCM client is not reporting inventory or software deployment status, first confirm that the SCCM client is installed and visible in the console.
+Check that the SMS Agent Host (CcmExec) service is running on the client.
+Verify that the client can reach the Management Point and Distribution Point over HTTP or HTTPS.
+Review LocationServices.log and ClientLocation.log on the client for site assignment and MP communication issues.
+
+[DOC4]
+Title: SCCM Application Deployment Failed
+When an application deployment fails in SCCM, start by checking AppEnforce.log on the client for the exact error code and command line used.
+Confirm that the content is available on the Distribution Point and that the client has network access to it.
+Validate that the detection method is correct; a wrong detection rule can mark a successful install as failed.
+Also verify that the user or device is in the correct collection targeted by the deployment.
+
+[DOC5]
+Title: SCOM Disk Space Alert
+For low disk space alerts in SCOM, log on to the affected server and review free space on all volumes using Disk Management or PowerShell.
+Clean temporary files, old log files, and unnecessary installers.
+If application logs are consuming space, consider redirecting them to another volume or implementing log rotation.
+If alerts are too frequent for normal usage, adjust the SCOM monitor threshold to a more appropriate value.
+
+[DOC6]
+Title: Windows Service Not Running
+If a monitored Windows service is reported as stopped, first try to start the service manually and note any error messages.
+Check the System and Application event logs for related errors or crashes around the time the service stopped.
+Verify that the service account password is correct and not locked out.
+If the service keeps stopping, enable service recovery options to restart it automatically and investigate underlying application issues.
+
+[DOC7]
+Title: SCOM Management Server Health
+When a SCOM management server is unhealthy, check the OperationsManager and System event logs for database or connectivity issues.
+Ensure that the Data Access Service and SDK Service are running.
+Verify that the management server can connect to the Operations database and Data Warehouse.
+If grooming or maintenance jobs are failing, the database might require indexing or space cleanup.
+
+[DOC8]
+Title: SCCM Software Update Scan Issues
+If clients are not receiving software updates, review WUAHandler.log and ScanAgent.log on the client.
+Ensure that the Software Update Point (SUP) is healthy and synchronized with WSUS.
+Confirm that the client can reach the SUP URL and that the correct WSUS/SUP is assigned in client settings.
+Sometimes resetting the Windows Update components on the client can resolve scanning problems.
+
+[DOC9]
+Title: SCOM RunAs Account Problems
+When monitors or rules fail due to RunAs account issues, verify that the RunAs account is still valid and not locked out or expired.
+Check RunAs profile associations to ensure they are targeted to the correct servers.
+Avoid using personal user accounts as RunAs accounts; instead, use dedicated service accounts with least privilege.
+Update passwords in SCOM whenever the underlying Active Directory account password changes.
+
+[DOC10]
+Title: General Windows Performance Troubleshooting
+For general Windows performance issues, start with Task Manager or Resource Monitor to identify high CPU, memory, or disk usage processes.
+Check for scheduled tasks, antivirus scans, or backup jobs running during peak hours.
+Review System and Application event logs for hardware errors, disk warnings, or driver problems.
+Consider collecting a PerfMon data collector set to analyze sustained performance bottlenecks.
