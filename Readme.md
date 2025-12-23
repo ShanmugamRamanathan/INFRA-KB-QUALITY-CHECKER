@@ -1,327 +1,274 @@
 ```markdown
-# Infra KB Quality Checker 🧠🔧
+# Infrastructure Knowledge Base Quality Checker
 
-An end-to-end Retrieval-Augmented Generation (RAG) project for evaluating and improving an **Infrastructure (Infra) Knowledge Base**.  
+A production-grade RAG (Retrieval-Augmented Generation) system that evaluates knowledge base quality for IT infrastructure troubleshooting. Built with Qdrant, Ollama, and Streamlit.
 
-The app lets you:
+![Python](https://img.shields.io/badge/python-3.10+-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-- Ask real-world SCOM/SCCM/Windows infra questions
-- Retrieve the most relevant KB articles from a vector database
-- Generate an answer using a local LLM (Ollama)
-- Score the quality of that answer using multiple evaluation metrics
-- Visualize everything in an interactive Streamlit UI
+## Problem
 
-This is designed as a **portfolio-grade** project that looks and behaves like something you’d build for a real ops/team environment.
+IT teams maintain scattered documentation across wikis, OneNote, Confluence, and text files. Questions remain:
+- Does our KB actually answer common support tickets?
+- Which topics need better documentation?
+- How do we measure KB quality objectively?
 
----
+This tool answers those questions with quantitative metrics.
 
-## 1. Problem Statement
+## Solution
 
-Infra teams usually have tons of scattered documentation: OneNote pages, Word docs, wikis, Confluence, random text files, etc.  
+An end-to-end system that:
+1. Retrieves relevant KB articles using semantic search
+2. Generates answers via local LLM
+3. Evaluates quality with 4 key metrics
+4. Provides an interactive dashboard for real-time Q&A
 
-Common problems:
-
-- Hard to know if the KB actually covers the most frequent issues
-- No objective way to measure KB quality
-- New engineers don’t know which docs to trust
-- “Ask the senior guy” becomes the default support flow
-
-This project answers two questions:
-
-1. **Can the KB answer this question right now?**
-2. **If not, what’s missing and how bad is the gap?**
-
----
-
-## 2. High-Level Architecture
-
-**Components:**
-
-- **Embedding Model**: `BAAI/bge-small-en-v1.5` (384-dim sentence embeddings)
-- **Vector DB**: Qdrant (local server) for semantic search
-- **LLM**: Ollama running `llama3.2` locally
-- **App**: Streamlit UI for interactive Q&A + metrics
-- **Eval Layer**: LLM-based evaluation of retrieval and answer quality
-
-**Flow:**
-
-1. Offline:
-   - Load KB text file
-   - Split into snippets
-   - Embed with BGE model
-   - Upsert into Qdrant collection
-
-2. Online (Dashboard):
-   - User asks a question in the UI
-   - Embed question → search Qdrant → get top‑K docs
-   - LLM generates an answer using only those docs as context
-   - Evaluation layer scores:
-     - Context Relevancy
-     - Answer Completeness
-     - Faithfulness (no hallucinations)
-     - Precision@K (retrieval quality)
-   - UI shows answer, sources, and metrics
-
----
-
-## 3. Features
-
-### Core
-
-- 🔎 **Semantic search** over infra KB (SCOM/SCCM/Windows troubleshooting)
-- 🤖 **Local LLM answering** via Ollama (`llama3.2`)
-- 📚 **Source transparency** – shows which KB snippets were used
-- 📊 **Quality metrics per question**:
-  - Context relevancy
-  - Answer completeness
-  - Faithfulness
-  - Precision@3
-  - Overall KB quality score (weighted)
-
-### Dashboard
-
-- Chat-style interface for asking infra questions
-- Per-question metrics and source snippets
-- Session stats (questions asked, average quality score)
-- Export session as JSON (for analysis or training data)
-- Configurable:
-  - Number of retrieved sources
-  - Toggle metrics and source visibility
-
----
-
-## 4. Tech Stack
-
-- **Python 3**
-- **Qdrant** (self-hosted, vector DB)
-- **SentenceTransformers** (`BAAI/bge-small-en-v1.5`)
-- **Ollama** (`llama3.2` model)
-- **Streamlit** for the UI
-
----
-
-## 5. Project Structure
+## Architecture
 
 ```
-infra-kb-quality-checker/
-├── app/
-│   └── streamlit_dashboard.py       # Interactive Q&A + metrics dashboard
-├── data/
-│   └── kb_docs/
-│       └── infra_sample_kb.txt      # Infra KB snippets (SCOM, SCCM, Windows)
-├── scripts/
-│   ├── load_kb_into_qdrant.py       # One-time KB load into Qdrant
-│   ├── check_kb_quality.py          # CLI-based evaluation and report
-│   └── evaluation_metrics.py        # Core metric calculations
-├── reports/                         # Generated JSON reports (gitignored)
-├── qdrant_storage/                  # Qdrant local data (gitignored)
-├── requirements.txt
-└── README.md
+User Question
+    ↓
+BGE Embeddings (384-dim)
+    ↓
+Qdrant Vector Search (top-K docs)
+    ↓
+Ollama LLM (llama3.2) → Answer
+    ↓
+Evaluation Layer → Metrics
+    ↓
+Streamlit Dashboard
 ```
 
----
+**Tech Stack:**
+- **Vector DB:** Qdrant (local)
+- **Embeddings:** BAAI/bge-small-en-v1.5
+- **LLM:** Ollama (llama3.2)
+- **Frontend:** Streamlit
+- **Language:** Python 3.10+
 
-## 6. Setup & Installation
+## Features
 
-### 6.1. Prerequisites
+- 🔍 Semantic search over infrastructure KB
+- 🤖 Local LLM-based Q&A (no API costs)
+- 📊 Real-time quality metrics per question
+- 📚 Source transparency (shows retrieved docs)
+- 💾 Session export for analysis
+- ⚙️ Configurable retrieval settings
 
-- Python 3.10+  
-- Qdrant server running locally (e.g. Docker)  
-- Ollama installed and working  
-- GPU is optional but recommended (for embeddings + LLM)
+## Evaluation Metrics
 
-**Run Qdrant via Docker:**
+| Metric | What It Measures | Target |
+|--------|-----------------|--------|
+| **Context Relevancy** | % of retrieved content actually relevant | >0.7 |
+| **Answer Completeness** | How fully the question is answered | >0.8 |
+| **Faithfulness** | Answer grounded in sources (no hallucination) | >0.9 |
+| **Precision@K** | Quality of top-K retrieved documents | >0.6 |
+| **Overall Score** | Weighted combination of above | >0.7 |
+
+## Installation
+
+### Prerequisites
+
+1. **Python 3.10+**
+2. **Qdrant** (via Docker):
+   ```
+   docker run -p 6333:6333 -v ./qdrant_storage:/qdrant/storage qdrant/qdrant
+   ```
+
+3. **Ollama**:
+   ```
+   # Install from https://ollama.com
+   ollama pull llama3.2
+   ```
+
+### Setup
 
 ```
-docker run -p 6333:6333 -v ./qdrant_storage:/qdrant/storage qdrant/qdrant
-```
-
-**Install Ollama (Windows/macOS/Linux)**  
-Follow instructions from https://ollama.com and make sure this works:
-
-```
-ollama --version
-ollama pull llama3.2
-```
-
-### 6.2. Clone & Install Dependencies
-
-```
-git clone <your-repo-url> infra-kb-quality-checker
+git clone https://github.com/yourusername/infra-kb-quality-checker.git
 cd infra-kb-quality-checker
 
 pip install -r requirements.txt
 ```
 
----
+## Quick Start
 
-## 7. Load the Knowledge Base into Qdrant
-
-This script:
-
-- Reads `infra_sample_kb.txt`
-- Splits it into snippets
-- Embeds with BGE model
-- Writes vectors + payload into Qdrant
+### 1. Load Knowledge Base
 
 ```
 python scripts/load_kb_into_qdrant.py
 ```
 
-Expected console output (example):
-
+**Expected output:**
 ```
-Collection infra_kb already exists
+Created collection: infra_kb
 Loaded 10 snippets from KB
 Model moved to GPU
 Inserted 10 points into infra_kb
 
-Search results for: SCOM agent heartbeat failure troubleshooting
-Score: 0.8390846
-Text: [DOC1] Title: SCOM Heartbeat Failure ...
-...
+Search results for: SCOM agent heartbeat failure
+Score: 0.839
+Text: [DOC1] Title: SCOM Heartbeat Failure...
 ```
 
-If you see 3 reasonable matches and similarity scores, your retrieval pipeline is working.
-
----
-
-## 8. Run the Interactive Dashboard
-
-Start the Streamlit app:
+### 2. Launch Dashboard
 
 ```
 streamlit run app/streamlit_dashboard.py
 ```
 
-This should open at `http://localhost:8501`.
+Opens at `http://localhost:8501`
 
-### Example Usage
+### 3. Ask Questions
 
-1. Type a question like:
-   - `Why is my SCOM agent not sending heartbeats?`
-   - `What should I do if SCOM database backup fails?`
-2. The app will:
-   - Retrieve top‑K KB snippets from Qdrant
-   - Ask `llama3.2` to answer based only on those snippets
-   - Compute metrics
-3. You’ll see:
-   - The generated answer
-   - Key metrics (Overall, Relevancy, Completeness, Faithfulness, Precision@3)
-   - Optional: the source documents used
+Try these sample questions:
+- `Why is my SCOM agent not sending heartbeats?`
+- `How do I troubleshoot high CPU usage on a monitored server?`
+- `What should I do if SCOM database backup fails?`
 
----
+## Project Structure
 
-## 9. Evaluation Metrics (What They Mean)
+```
+infra-kb-quality-checker/
+├── app/
+│   ├── streamlit_dashboard.py      # Interactive Q&A dashboard
+│   └── evaluation_metrics.py       # Metric calculations
+├── data/
+│   └── kb_docs/
+│       └── infra_sample_kb.txt     # Sample KB (SCOM/SCCM/Windows)
+├── scripts/
+│   ├── load_kb_into_qdrant.py      # KB vectorization & ingestion
+│   ├── check_kb_quality.py         # Batch evaluation CLI
+│   └── evaluation_metrics.py       # Shared metrics module
+├── reports/                         # Generated evaluation reports
+├── requirements.txt
+└── README.md
+```
 
-The interesting part of this project is the **evaluation layer**, not just the RAG pipeline.
+## How It Works
 
-For each question, the system computes:
+### 1. Knowledge Base Loading
+- Reads KB text file (`infra_sample_kb.txt`)
+- Splits into document snippets
+- Generates 384-dim embeddings using BGE model
+- Stores in Qdrant vector database
 
-### 1. Context Relevancy
+### 2. Question Processing
+```
+Question → Embed → Search Qdrant → Retrieve top-3 docs
+```
 
-> How much of the retrieved content is actually relevant to the question?
+### 3. Answer Generation
+```
+Retrieved docs + Question → Ollama (llama3.2) → Answer
+```
 
-Rough intuition:  
-Relevant sentences / total sentences in retrieved documents.
+### 4. Quality Evaluation
+LLM analyzes:
+- Are retrieved docs relevant?
+- Does KB fully answer the question?
+- Is the answer faithful to sources?
+- Were the right documents retrieved?
 
-### 2. Answer Completeness
+## Sample Output
 
-> Does the KB content fully answer the question?
+```
+🙋 You asked: Why is my SCOM agent not sending heartbeats?
 
-The evaluator:
+🤖 Answer:
+According to Source 1, when a SCOM agent stops sending heartbeats, first check 
+if the server is online and reachable. Verify DNS resolution works correctly. 
+Then confirm the Microsoft Monitoring Agent (Health Service) is running and 
+restart it if needed using services.msc or PowerShell...
 
-- Breaks the question into 3–5 sub-questions
-- Labels each as ANSWERED / PARTIAL / NOT_ANSWERED
-- Converts that into a score between 0 and 1
+📊 Quality Metrics:
+Overall: 0.43  Relevancy: 0.13🔴  Complete: 0.80🟢  Faithful: 0.60🟡  Precision: 0.00🔴
 
-### 3. Faithfulness
+📚 3 Source Documents Used
+```
 
-> Is the answer grounded in the KB, or is the LLM hallucinating?
+## Batch Evaluation (CLI)
 
-Checks whether the claims in the answer can be traced back to KB snippets.
-
-### 4. Precision@3
-
-> Out of the top 3 retrieved snippets, how many were actually relevant?
-
-Simple retrieval quality metric:
-- 1.0 → all top 3 are useful
-- 0.0 → none of them are useful
-
-### 5. Overall Quality Score
-
-A weighted combination of the above:
-
-- Context Relevancy – 25%
-- Answer Completeness – 35%
-- Faithfulness – 20%
-- Precision@3 – 20%
-
-This gives a single number per question that you can track over time.
-
----
-
-## 10. Offline CLI Evaluation (Optional)
-
-Besides the UI, you can also run batch evaluation from the command line:
+For automated testing:
 
 ```
 python scripts/check_kb_quality.py
 ```
 
-This:
+Generates:
+- `reports/kb_quality_detailed_YYYYMMDD_HHMMSS.json`
+- `reports/kb_quality_summary_YYYYMMDD_HHMMSS.json`
 
-- Runs a fixed set of test questions
-- Logs metrics per question
-- Writes:
-  - `reports/kb_quality_detailed_YYYYMMDD_HHMMSS.json`
-  - `reports/kb_quality_summary_YYYYMMDD_HHMMSS.json`
+Example summary output:
+```
+{
+  "total_questions": 3,
+  "avg_metrics": {
+    "context_relevancy": 0.258,
+    "answer_completeness": 0.800,
+    "faithfulness": 0.600,
+    "precision_at_3": 0.000,
+    "overall_score": 0.464
+  },
+  "worst_questions": [...]
+}
+```
 
-These are what the dashboard originally used before the live Q&A mode.
+## Configuration
 
----
-
-## 11. Ideas for Further Improvement
-
-If you want to extend this project further:
-
-- Add more KB documents and show before/after metrics
-- Support multiple collections (SCOM, SCCM, Windows, Linux, etc.)
-- Add authentication for the dashboard
-- Log anonymized real queries from users (if deployed in a team)
-- Add a “Suggest new KB article” button when completeness is low
-
----
-
-## 12. Why This Project Matters
-
-This project isn’t just a toy chatbot.
-
-It demonstrates:
-
-- Practical use of RAG for internal tooling
-- Realistic infra troubleshooting domain (SCOM/SCCM/Windows)
-- Evaluation of both retrieval and generation, not just “does it answer?”
-- Integration of:
-  - Vector DB (Qdrant)
-  - Embeddings (BGE)
-  - Local LLM (Ollama)
-  - Web UI (Streamlit)
-
-That combination is exactly the kind of end-to-end system people expect from an engineer building AI tools for ops/SRE/support teams.
-
----
-
-## 13. How to Use This in a Portfolio / Interview
-
-Some talking points you can use:
-
-- “I built a KB quality checker that scores how well our internal docs answer real infra questions.”
-- “The system uses vector search + a local LLM + an evaluation layer with multiple metrics.”
-- “I can tell you which topics are under-documented and by how much, numerically.”
-- “It’s all local (Ollama + Qdrant), so no data leaves the environment.”
-
-Feel free to fork, adapt, or plug in your own KB content.
+Edit these constants in scripts:
 
 ```
+# Qdrant connection
+QDRANT_HOST = "localhost"
+QDRANT_PORT = 6333
+COLLECTION_NAME = "infra_kb"
+
+# Models
+EMBEDDING_MODEL_NAME = "BAAI/bge-small-en-v1.5"
+OLLAMA_MODEL = "llama3.2"
+```
+
+## Extending the Project
+
+Ideas for enhancement:
+- [ ] Add 50+ KB articles to improve metrics
+- [ ] Support multiple KB collections (Linux, Network, Cloud)
+- [ ] Fine-tune embeddings on domain data
+- [ ] Add user authentication
+- [ ] Deploy with Docker Compose
+- [ ] Integrate with Slack/Teams for team access
+- [ ] A/B test different LLMs (GPT-4, Claude, Mistral)
+
+## Why This Project Matters
+
+Demonstrates:
+- ✅ Production RAG architecture (not just a chatbot)
+- ✅ Quantitative evaluation (not subjective judgment)
+- ✅ Real business value (identifies KB gaps)
+- ✅ Full-stack ML (embeddings + vector DB + LLM + UI)
+- ✅ Local deployment (no API costs, data stays private)
+
+Perfect for portfolios targeting: MLOps, AI Engineering, SRE/DevOps automation, Enterprise AI roles.
+
+## Results
+
+Current baseline (10 KB documents):
+
+| Metric | Score | Status |
+|--------|-------|--------|
+| Context Relevancy | 0.258 | 🔴 Needs improvement |
+| Answer Completeness | 0.800 | 🟢 Good |
+| Faithfulness | 0.600 | 🟡 Acceptable |
+| Precision@3 | 0.000 | 🔴 Critical - need more docs |
+| **Overall** | **0.464** | 🟠 **Fair** |
+
+**Key insight:** System correctly identifies that KB needs 2-3x more content to adequately answer common questions.
+
+
+## Author
+
+[Shanmugam Ramanathan](https://github.com/ShanmugamRamanathan)  li
+[LinkedIn](https://www.linkedin.com/in/shanmugam-ramanathan-260953262/)
+
+[1](https://towardsdatascience.com/dont-build-an-ml-portfolio-without-these-projects/)
+[2](https://www.guvi.in/blog/machine-learning-professional-portfolio/)
