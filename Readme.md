@@ -310,3 +310,18 @@ It demonstrates:
   - Web UI (Streamlit)
 
 That combination is exactly the kind of end-to-end system people expect from an engineer building AI tools for ops/SRE/support teams.
+
+---
+
+## 13. How to Use This in a Portfolio / Interview
+
+Some talking points you can use:
+
+- “I built a KB quality checker that scores how well our internal docs answer real infra questions.”
+- “The system uses vector search + a local LLM + an evaluation layer with multiple metrics.”
+- “I can tell you which topics are under-documented and by how much, numerically.”
+- “It’s all local (Ollama + Qdrant), so no data leaves the environment.”
+
+Feel free to fork, adapt, or plug in your own KB content.
+
+```
